@@ -217,13 +217,12 @@ func main() {
 		end := r.URL.Query().Get("end")
 
 		if start == "" {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(400)
-			json.NewEncoder(w).Encode(map[string]interface{}{
-				"status":  false,
-				"message": "start index is required",
-			})
-			return
+			latestBlockNumber, err := cl.BlockNumber(context.Background())
+			if err != nil {
+				log.Printf("Failed to get latest block number: %v\n", err)
+				return
+			}
+			start = big.NewInt(int64(latestBlockNumber)).String()
 		}
 
 		// convert to int64
