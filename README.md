@@ -54,44 +54,26 @@ To get the code up and running, you need to first make a clone to your local har
 git clone https://github.com/infura/infura-infra-test-perfection-loveday.git explorer
 ```
 
-Then you need to switch to the right branch
-
-```bash
-git checkout mini-blockchain-explorer
-```
-
 **After the above steps, it's time to re-visit the requirements section above.**
 
-To run the indexer, run the following command
+Once you have the `.env` files setup, you can run the following commands to get the microservices up and running:
 
 ```bash
-cd indexer
-go mod tidy
-go run main.go
+make all
 ```
 
 The indexer won't automatically start scanning the blockchain. To start scanning, you need to send a POST request to the indexer from the api.
 
-To start the api, open a new terminal instance in the same `explorer` directory and run the following command
-
-```bash
-cd api
-go mod tidy
-go run main.go
-```
-
-Now that both the indexer and the api are running, you can send a POST request to the api to start the indexer.
-
 - To scan from block `100` to block `200`
 
 ```bash
-curl -X POST http://localhost:{your-api-port}/index?auth_token=a-dummy-token&scan=100:200
+curl -X POST http://localhost:{{your-api-port}}/index?auth_token=a-dummy-token&scan=100:200
 ```
 
 - To scan from block `100` to block `latest` and then keep scanning for new blocks
 
 ```bash
-curl -X POST http://localhost:{your-api-port}/index?auth_token=a-dummy-token&scan=100:200
+curl -X POST http://localhost:{{your-api-port}}/index?auth_token=a-dummy-token&scan=100:200
 ```
 
 Note that `auth_token` is required but can include any value.
