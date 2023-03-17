@@ -1,0 +1,97 @@
+version: '3.4'
+
+networks:
+  k6:
+  grafana:
+  api:
+  database:
+  indexer:
+
+services:
+  influxdb:
+    image: influxdb:1.8
+    networks:
+      - k6
+      - grafana
+    ports:
+      - '8086:8086'
+    environment:
+      - INFLUXDB_DB=k6
+
+  grafana:
+    image: grafana/grafana:latest
+    networks:
+      - grafana
+    ports:
+      - '3000:3000'
+    environment:
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_BASIC_ENABLED=false
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    volumes:
+      - ./dashboards:/var/lib/grafana/dashboards
+      - ./grafana-dashboard.yaml:/etc/grafana/provisioning/dashboards/dashboard.yaml
+      - ./grafana-datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml
+
+  k6:
+    image: loadimpact/k6:latest
+    networks:
+      - k6
+      - api
+    ports:
+      - '6565:6565'
+    environment:
+      - K6_OUT=influxdb=http://influxdb:8086/k6
+      - API_ENDPOINT=http://api:5000
+      - TARGET_VUS=5000
+    volumes:
+      - ./scripts:/scripts
+
+  database:
+    image: 'postgres:14'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: infura
+    ports:
+      - '5432:5432'
+    expose:
+      - '5432'
+    volumes:
+      - database-data:/var/lib/postgresql/data/
+    networks:
+      - database
+
+  indexer:
+    build: ./indexer
+    env_file:
+      - ./indexer/.env.test
+    ports:
+      - '2500:2500'
+    expose:
+      - '2500'
+    depends_on:
+      - database
+    networks:
+      - database
+
+  api:
+    build: ./api
+    env_file:
+      - ./api/.env.test
+    ports:
+      - '5000:5000'
+    expose:
+      - '5000'
+    depends_on:
+      - database
+      - indexer
+    networks:
+      - database
+      - indexer
+      - k6
+      - api
+
+volumes:
+  database-data:
